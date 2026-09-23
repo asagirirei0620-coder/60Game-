@@ -140,7 +140,7 @@
 
     .key-btn:hover { background: #333; }
 
-    /* 血飛沫キャンバス（最前面） */
+    /* 血痕キャンバス（レイヤー） */
     #blood-canvas {
       position: absolute;
       top: 0;
@@ -158,41 +158,29 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(40, 0, 0, 0.5);
+      background: rgba(15, 0, 0, 0.6);
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       gap: 20px;
       z-index: 110;
+      transition: opacity 1s;
     }
 
     .retry-btn {
-      background: #800000;
+      background: #600000;
       color: #fff;
-      border: 1px solid #ff3333;
+      border: 1px solid #990000;
       padding: 15px 30px;
       font-size: 1.1rem;
       cursor: pointer;
       font-family: inherit;
-      box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+      box-shadow: 0 0 15px rgba(150, 0, 0, 0.4);
     }
 
     .retry-btn:hover {
-      background: #b30000;
-    }
-
-    @keyframes shake {
-      0% { transform: translate(3px, 3px); }
-      20% { transform: translate(-4px, -1px); }
-      40% { transform: translate(4px, -3px); }
-      60% { transform: translate(-3px, 3px); }
-      80% { transform: translate(3px, -2px); }
-      100% { transform: translate(0, 0); }
-    }
-
-    .shaking {
-      animation: shake 0.08s infinite;
+      background: #800000;
     }
   </style>
 </head>
@@ -239,7 +227,7 @@
 
     <!-- 死亡画面 -->
     <div id="death-overlay" class="hidden">
-      <div style="color: #ff3333; font-size: 1.8rem; text-shadow: 0 0 10px #000;">視界が赤く染まり、動かなくなった……</div>
+      <div style="color: #cc2222; font-size: 1.6rem; text-shadow: 0 0 10px #000;">脈拍停止。死亡を確認。</div>
       <button class="retry-btn" onclick="restartGame()">記憶を保持して再試行（ループ）</button>
     </div>
   </div>
@@ -253,10 +241,11 @@
   let loopCount = 1;
   let inputCode = "";
 
-  // 死亡演出用アニメーション変数
-  let deathAnimationTimer = 0;
-  let corpseAngle = 0; // 倒れる方向
-  let corpseLength = 0; // 倒れる体の長さ（アニメーション用）
+  // 死亡アニメーション用ステート
+  let fallProgress = 0;   // 倒れ具合（0〜1）
+  let corpseAngle = 0;    // 倒れる方向の角度
+  let headPos = { x: 0, y: 0 };
+  let bloodBlobs = [];    // 不規則な血溜まりのパーツ群
 
   // 記憶（周回後も維持）
   let memory = {
@@ -330,12 +319,12 @@
     isWon = false;
     player.x = 400;
     player.y = 400;
-    deathAnimationTimer = 0;
+    fallProgress = 0;
+    bloodBlobs = [];
     
     bloodCtx.clearRect(0, 0, bloodCanvas.width, bloodCanvas.height);
     document.getElementById('death-overlay').classList.add('hidden');
     document.getElementById('keypad-overlay').classList.add('hidden');
-    document.getElementById('game-container').classList.remove('shaking');
 
     setMessage(`【ループ #${loopCount}】研究室に閉じ込められた。タイマーが動いている…！`);
     
@@ -355,7 +344,7 @@
       timeLeft -= dt;
       if (timeLeft <= 0) {
         timeLeft = 0;
-        triggerDeath("毒ガス充填による呼吸停止および脳出血");
+        triggerDeath("時間切れ：低酸素および頭部血管破裂");
         return;
       }
 
@@ -381,11 +370,9 @@
       let nextX = player.x + dx * player.speed;
       let nextY = player.y + dy * player.speed;
 
-      // 外枠壁とのコリジョン
       nextX = Math.max(30, Math.min(canvas.width - 30, nextX));
       nextY = Math.max(50, Math.min(canvas.height - 30, nextY));
 
-      // オブジェクト衝突回避
       objects.forEach(obj => {
         if (nextX + player.radius > obj.x && nextX - player.radius < obj.x + obj.w &&
             nextY + player.radius > obj.y && nextY - player.radius < obj.y + obj.h) {
@@ -398,7 +385,6 @@
       player.y = nextY;
     }
 
-    // 描画
     render();
 
     if (!isDead) {
@@ -439,7 +425,7 @@
       ctx.fillText(obj.name, obj.x, obj.y - 5);
     });
 
-    // プレイヤー描画（生きていれば円、死んでいれば倒れた体）
+    // プレイヤー描画
     if (!isDead) {
       ctx.shadowBlur = 10;
       ctx.shadowColor = player.color;
@@ -455,28 +441,52 @@
       ctx.arc(player.x, player.y - 3, 4, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // 倒れた死体（見下ろし描画）
+      // リアルな「倒れた人体」のトップダウン描画
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.rotate(corpseAngle);
 
-      // 横たわった胴体（長円形）
-      ctx.fillStyle = '#006644';
+      // 段階的な倒れ（イージング）
+      let bodyLength = 24 * fallProgress;
+      let bodyWidth = 10 - (2 * fallProgress);
+
+      // 脚・下半身
+      ctx.fillStyle = '#0a3d2e';
       ctx.beginPath();
-      ctx.ellipse(0, corpseLength / 2, 8, corpseLength / 2 + 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, bodyLength * 0.2, bodyWidth * 0.8, bodyLength * 0.3, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 頭部（床に接している部分）
-      ctx.fillStyle = '#cccccc';
+      // 胴体
+      ctx.fillStyle = '#00553d';
       ctx.beginPath();
-      ctx.arc(0, corpseLength + 6, 6, 0, Math.PI * 2);
+      ctx.ellipse(0, bodyLength * 0.6, bodyWidth, bodyLength * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
+
+      // 投げ出された両腕
+      ctx.fillStyle = '#004430';
+      ctx.beginPath();
+      ctx.ellipse(-bodyWidth * 1.1, bodyLength * 0.5, 3, 8, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(bodyWidth * 1.1, bodyLength * 0.6, 3, 8, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 頭部（床についた状態）
+      let currentHeadY = bodyLength + 5;
+      ctx.fillStyle = '#d0d0d0';
+      ctx.beginPath();
+      ctx.arc(0, currentHeadY, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 頭部の位置をグローバル座標として保持（血液の発生源）
+      let rad = corpseAngle;
+      headPos = {
+        x: player.x + (-currentHeadY * Math.sin(rad)),
+        y: player.y + (currentHeadY * Math.cos(rad))
+      };
 
       ctx.restore();
     }
   }
 
-  // 近づいて調査
   function interact() {
     if (isDead || isWon) return;
 
@@ -499,7 +509,7 @@
           memory.knowsCode = true;
           setMessage("【金庫】ロックを解除して紙片を見つけた！『脱出コード: 7402』（記憶に保存された）");
         } else if (obj.id === 'chemicals') {
-          triggerDeath("濃硫酸をかぶってしまい、頭部および身体が溶解");
+          triggerDeath("強酸性試薬を被曝。頭部および呼吸器系が損傷");
         }
       }
     });
@@ -545,111 +555,95 @@
     }
   }
 
-  // 死亡演出（倒れる＋血飛沫＋頭からの失血）
+  // リアルな死亡＆頭部からの流血処理
   function triggerDeath(reason) {
     if (isDead) return;
     isDead = true;
 
-    document.getElementById('game-container').classList.add('shaking');
     setMessage(`【死亡】${reason}`);
 
-    // 倒れる方向（ランダムな角度）
+    // 倒れる方向（ランダム）
     corpseAngle = Math.random() * Math.PI * 2;
-    corpseLength = 0;
 
-    // 頭部（血の発生源）の位置を計算
-    const getHeadPos = () => {
-      return {
-        x: player.x + Math.sin(corpseAngle) * (corpseLength + 6),
-        y: player.y - Math.cos(corpseAngle) * (corpseLength + 6)
-      };
-    };
-
-    // 初期の激しい血飛沫（バースト）
-    let particles = [];
-    for (let i = 0; i < 150; i++) {
-      particles.push({
-        x: player.x,
-        y: player.y,
-        vx: (Math.random() - 0.5) * 28,
-        vy: (Math.random() - 0.5) * 28,
-        r: Math.random() * 6 + 2,
-        color: Math.random() > 0.25 ? '#800000' : '#cc0000'
+    // 不規則なリアルな血溜まり形状（複数の円・水滴の集合体）を生成
+    bloodBlobs = [];
+    for (let i = 0; i < 18; i++) {
+      let angle = Math.random() * Math.PI * 2;
+      let dist = Math.random() * 22;
+      bloodBlobs.push({
+        offsetX: Math.cos(angle) * dist,
+        offsetY: Math.sin(angle) * dist,
+        maxRadius: Math.random() * 12 + 6,
+        currentRadius: 0,
+        growthSpeed: Math.random() * 0.15 + 0.05,
+        color: Math.random() > 0.3 ? '#4a0000' : '#2b0000' // 酸化したリアルな濃い血の色
       });
     }
 
-    // 頭部からジワジワ広がる血溜まり（プール）の半径
-    let headBloodRadius = 0;
-
     let frame = 0;
-    function animateDeathSequence() {
+    function animateDeath() {
       frame++;
 
-      // 主人公が倒れるアニメーション（胴体が伸びて伏せる）
-      if (corpseLength < 22) {
-        corpseLength += 1.5;
+      // 1. 膝から崩れ落ちて横たわる（スローモーション）
+      if (fallProgress < 1.0) {
+        fallProgress += 0.04;
       }
 
-      // 再描画（倒れる姿を毎フレーム更新）
       render();
 
-      // 血飛沫パーティクル
-      bloodCtx.fillStyle = 'rgba(10, 0, 0, 0.02)';
-      bloodCtx.fillRect(0, 0, bloodCanvas.width, bloodCanvas.height);
+      // 2. 頭部が床についた後、頭頂部/側面から血が染み出し、床の目地に沿って広がる
+      if (frame > 12) {
+        bloodCtx.save();
 
-      particles.forEach(p => {
-        bloodCtx.beginPath();
-        bloodCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        bloodCtx.fillStyle = p.color;
-        bloodCtx.fill();
-
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.92;
-        p.vy *= 0.92;
-      });
-
-      // 倒れた後、頭部から血が大きく滲み出る描写
-      if (frame > 15) {
-        const head = getHeadPos();
-        headBloodRadius += 0.8;
-
-        // 頭部の血溜まり（グラデーションでリアルにしみ出す表現）
-        let bloodGrad = bloodCtx.createRadialGradient(
-          head.x, head.y, 1,
-          head.x, head.y, Math.min(headBloodRadius, 35)
+        // 濃くドロっとした主血溜まり（グラデーション）
+        let baseGrad = bloodCtx.createRadialGradient(
+          headPos.x, headPos.y, 2,
+          headPos.x, headPos.y, Math.min((frame - 12) * 0.6, 28)
         );
-        bloodGrad.addColorStop(0, '#990000');
-        bloodGrad.addColorStop(0.7, '#660000');
-        bloodGrad.addColorStop(1, 'rgba(60, 0, 0, 0.2)');
+        baseGrad.addColorStop(0, '#5a0000');
+        baseGrad.addColorStop(0.6, '#380000');
+        baseGrad.addColorStop(1, 'rgba(30, 0, 0, 0.8)');
 
-        bloodCtx.fillStyle = bloodGrad;
+        bloodCtx.fillStyle = baseGrad;
         bloodCtx.beginPath();
-        bloodCtx.arc(head.x, head.y, Math.min(headBloodRadius, 35), 0, Math.PI * 2);
+        bloodCtx.arc(headPos.x, headPos.y, Math.min((frame - 12) * 0.6, 28), 0, Math.PI * 2);
         bloodCtx.fill();
 
-        // 不規則な血の滴り・飛び散り
-        if (frame % 4 === 0 && headBloodRadius < 30) {
-          bloodCtx.fillStyle = '#800000';
+        // 不規則に周囲へ拡がる血の塊・滲み（流体表現）
+        bloodBlobs.forEach(b => {
+          if (b.currentRadius < b.maxRadius) {
+            b.currentRadius += b.growthSpeed;
+          }
+          bloodCtx.fillStyle = b.color;
           bloodCtx.beginPath();
           bloodCtx.arc(
-            head.x + (Math.random() - 0.5) * headBloodRadius * 1.5,
-            head.y + (Math.random() - 0.5) * headBloodRadius * 1.5,
-            Math.random() * 4 + 2,
+            headPos.x + b.offsetX,
+            headPos.y + b.offsetY,
+            b.currentRadius,
             0, Math.PI * 2
           );
           bloodCtx.fill();
+        });
+
+        // 静脈血の光沢（粘度感）
+        if (frame > 30) {
+          bloodCtx.fillStyle = 'rgba(120, 10, 10, 0.4)';
+          bloodCtx.beginPath();
+          bloodCtx.arc(headPos.x - 2, headPos.y - 2, 4, 0, Math.PI * 2);
+          bloodCtx.fill();
         }
+
+        bloodCtx.restore();
       }
 
-      if (frame < 70) {
-        requestAnimationFrame(animateDeathSequence);
+      if (frame < 100) {
+        requestAnimationFrame(animateDeath);
       } else {
         document.getElementById('death-overlay').classList.remove('hidden');
       }
     }
 
-    animateDeathSequence();
+    animateDeath();
   }
 
   function restartGame() {

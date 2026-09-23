@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RESEARCH LAB : TOP-DOWN LOOP 60</title>
+  <title>PROJECT: CHRONOS - LOOP 60</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,7 +13,7 @@
     }
 
     body {
-      background-color: #050505;
+      background-color: #030406;
       color: #d4d4d4;
       font-family: 'Courier New', Courier, monospace;
       display: flex;
@@ -25,188 +25,240 @@
 
     #game-container {
       position: relative;
-      width: 800px;
-      max-width: 95vw;
-      height: 600px;
+      width: 960px;
+      max-width: 98vw;
+      height: 680px;
+      max-height: 95vh;
       background: #000;
-      border: 2px solid #2a303c;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+      border: 2px solid #2a3442;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.95);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    /* ヘッダー・タイマーバー */
+    /* ヘッダー・HUD */
     #header {
-      background: #141820;
-      padding: 10px 15px;
-      border-bottom: 2px solid #2a303c;
+      background: #0d1117;
+      padding: 10px 20px;
+      border-bottom: 2px solid #2a3442;
       display: flex;
       justify-content: space-between;
       align-items: center;
       z-index: 10;
     }
 
-    #timer-display {
-      font-size: 2rem;
-      font-weight: bold;
-      color: #ff3333;
-      text-shadow: 0 0 8px rgba(255, 51, 51, 0.6);
+    .sub-info {
+      font-size: 0.75rem;
+      color: #5b6e85;
+      letter-spacing: 1px;
     }
 
-    /* メインゲーム領域 */
+    #timer-display {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #ff3333;
+      text-shadow: 0 0 10px rgba(255, 51, 51, 0.6);
+      font-family: monospace;
+    }
+
+    /* 描画ビューポート */
     #viewport {
       position: relative;
       flex: 1;
       width: 100%;
       height: 100%;
-      background: #080a0d;
+      background: #05070a;
       overflow: hidden;
     }
 
-    /* 2D 描画キャンバス */
-    #game-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* UIオーバーレイ（テキストメッセージ） */
-    #message-box {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      background: rgba(10, 14, 20, 0.9);
-      border: 1px solid #3a4659;
-      padding: 12px 15px;
-      color: #00ffcc;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      pointer-events: none;
-      z-index: 20;
-      min-height: 60px;
-      border-radius: 4px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.8);
-    }
-
-    /* キーパッドUI */
-    #keypad-overlay {
+    #game-canvas, #blood-canvas {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      display: block;
+    }
+
+    #blood-canvas {
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* メッセージUI */
+    #message-box {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      right: 15px;
+      background: rgba(10, 14, 20, 0.92);
+      border: 1px solid #3a4b60;
+      padding: 14px 18px;
+      color: #00ffcc;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      pointer-events: none;
+      z-index: 20;
+      min-height: 70px;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.9);
+      backdrop-filter: blur(4px);
+    }
+
+    /* 端末・ノートモーダル */
+    #terminal-overlay, #keypad-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 12, 0.92);
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       gap: 15px;
       z-index: 30;
+      backdrop-filter: blur(6px);
     }
 
-    .hidden {
-      display: none !important;
+    .terminal-card {
+      width: 80%;
+      max-width: 650px;
+      background: #090d14;
+      border: 1px solid #00ffcc;
+      padding: 25px;
+      color: #00ffcc;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      max-height: 80%;
+      overflow-y: auto;
     }
+
+    .terminal-card h3 {
+      border-bottom: 1px dashed #00ffcc;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .close-btn {
+      margin-top: 15px;
+      background: #14202e;
+      border: 1px solid #3a4b60;
+      color: #fff;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .close-btn:hover { background: #223348; }
+
+    /* キーパッド */
+    .hidden { display: none !important; }
 
     #keypad-display {
-      width: 200px;
-      height: 40px;
-      background: #111;
+      width: 220px;
+      height: 45px;
+      background: #080808;
       border: 1px solid #ff3333;
       color: #ff3333;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       text-align: center;
-      line-height: 40px;
-      letter-spacing: 5px;
+      line-height: 45px;
+      letter-spacing: 6px;
+      box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
     }
 
     .keypad-grid {
       display: grid;
-      grid-template-columns: repeat(3, 60px);
+      grid-template-columns: repeat(3, 65px);
       gap: 10px;
     }
 
     .key-btn {
-      width: 60px;
-      height: 50px;
-      background: #222;
-      border: 1px solid #444;
+      width: 65px;
+      height: 55px;
+      background: #141a22;
+      border: 1px solid #2a3848;
       color: #fff;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       cursor: pointer;
     }
+    .key-btn:hover { background: #253344; }
 
-    .key-btn:hover { background: #333; }
-
-    /* 血痕キャンバス（レイヤー） */
-    #blood-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 100;
-    }
-
-    /* リトライ画面 */
+    /* 死亡・ゲームオーバー画面 */
     #death-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(15, 0, 0, 0.6);
+      background: rgba(10, 0, 0, 0.75);
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       gap: 20px;
       z-index: 110;
-      transition: opacity 1s;
+    }
+
+    .death-title {
+      color: #ff2222;
+      font-size: 1.8rem;
+      text-shadow: 0 0 15px #ff0000;
+      letter-spacing: 2px;
     }
 
     .retry-btn {
-      background: #600000;
+      background: #4a0000;
       color: #fff;
-      border: 1px solid #990000;
-      padding: 15px 30px;
+      border: 1px solid #aa0000;
+      padding: 14px 35px;
       font-size: 1.1rem;
       cursor: pointer;
       font-family: inherit;
-      box-shadow: 0 0 15px rgba(150, 0, 0, 0.4);
+      box-shadow: 0 0 20px rgba(170, 0, 0, 0.5);
+      transition: all 0.2s;
     }
-
     .retry-btn:hover {
-      background: #800000;
+      background: #700000;
+      box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
     }
   </style>
 </head>
 <body>
 
 <div id="game-container">
-  <canvas id="blood-canvas"></canvas>
-
   <div id="header">
     <div>
-      <div style="color: #aaa; font-size: 0.8rem;">CONTAINMENT LAB - TOP DOWN</div>
-      <div style="font-size: 0.75rem; color: #666;">移動: [WASD] / [矢印キー] | 調べる: [Space] / 近づく</div>
+      <div style="color: #8a9bb0; font-size: 0.85rem; font-weight: bold;">SECTOR-7 : TEMPORAL RESEARCH FACILITY</div>
+      <div class="sub-info">操作: [WASD/矢印] 移動 | [SPACE] 調べる</div>
     </div>
     <div id="timer-display">60.00</div>
   </div>
 
   <div id="viewport">
     <canvas id="game-canvas"></canvas>
+    <canvas id="blood-canvas"></canvas>
 
     <div id="message-box">
-      [WASD] または 矢印キー で移動して研究室を調べてください。
+      初期化完了。意識が覚醒…タイムリミットまで60秒。施設を探索せよ。
     </div>
 
-    <!-- 暗号キーパッド -->
+    <!-- 端末ログ画面 -->
+    <div id="terminal-overlay" class="hidden">
+      <div class="terminal-card">
+        <h3 id="term-title">LOG TERMINAL</h3>
+        <div id="term-content">データ読み込み中…</div>
+        <button class="close-btn" onclick="closeTerminal()">画面を閉じる</button>
+      </div>
+    </div>
+
+    <!-- キーパッド画面 -->
     <div id="keypad-overlay" class="hidden">
-      <div style="color: #aaa; font-size: 0.9rem;">緊急脱出用コードを入力</div>
+      <div style="color: #aaa; font-size: 0.9rem;">第4隔壁 脱出暗号を入力</div>
       <div id="keypad-display">----</div>
       <div class="keypad-grid">
         <button class="key-btn" onclick="pressKey('1')">1</button>
@@ -222,53 +274,64 @@
         <button class="key-btn" onclick="pressKey('0')">0</button>
         <button class="key-btn" onclick="submitKey()">OK</button>
       </div>
-      <button class="key-btn" style="width: 200px; margin-top: 10px;" onclick="closeKeypad()">離れる</button>
+      <button class="close-btn" onclick="closeKeypad()">離れる</button>
     </div>
 
     <!-- 死亡画面 -->
     <div id="death-overlay" class="hidden">
-      <div style="color: #cc2222; font-size: 1.6rem; text-shadow: 0 0 10px #000;">脈拍停止。死亡を確認。</div>
-      <button class="retry-btn" onclick="restartGame()">記憶を保持して再試行（ループ）</button>
+      <div class="death-title">生命反応停止</div>
+      <div id="death-reason" style="color: #bbb; font-size: 0.95rem;"></div>
+      <button class="retry-btn" onclick="restartGame()">記憶を保持して再同期（ループ）</button>
     </div>
   </div>
 </div>
 
 <script>
+  // --- マップ・世界観設定 ---
+  const MAP_WIDTH = 2400;
+  const MAP_HEIGHT = 1600;
   const TOTAL_TIME = 60.0;
+
   let timeLeft = TOTAL_TIME;
   let isDead = false;
   let isWon = false;
   let loopCount = 1;
   let inputCode = "";
 
-  // 死亡アニメーション用ステート
-  let fallProgress = 0;   // 倒れ具合（0〜1）
-  let corpseAngle = 0;    // 倒れる方向の角度
+  // 死亡＆血痕システム用
+  let fallProgress = 0;
+  let corpseAngle = 0;
   let headPos = { x: 0, y: 0 };
-  let bloodBlobs = [];    // 不規則な血溜まりのパーツ群
+  let bloodBlobs = [];
 
-  // 記憶（周回後も維持）
+  // 周回記憶
   let memory = {
     knowsCode: false,
-    code: "7402"
+    foundLogs: new Set(),
+    hasKeycard: false,
+    unlockedDoors: new Set()
   };
 
-  // キャンバス設定
+  // キャンバス・カメラ
   const canvas = document.getElementById('game-canvas');
   const ctx = canvas.getContext('2d');
   const bloodCanvas = document.getElementById('blood-canvas');
   const bloodCtx = bloodCanvas.getContext('2d');
+
+  let camera = { x: 0, y: 0, width: 0, height: 0 };
 
   function resize() {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     bloodCanvas.width = bloodCanvas.offsetWidth;
     bloodCanvas.height = bloodCanvas.offsetHeight;
+    camera.width = canvas.width;
+    camera.height = canvas.offsetHeight;
   }
   window.addEventListener('resize', resize);
   resize();
 
-  // キー入力状態
+  // キー入力
   const keys = {};
   window.addEventListener('keydown', e => {
     keys[e.code] = true;
@@ -276,31 +339,118 @@
   });
   window.addEventListener('keyup', e => keys[e.code] = false);
 
-  // プレイヤーパラメータ
+  // プレイヤー初期設定（中央の実験室からスタート）
   const player = {
-    x: 400,
-    y: 300,
-    radius: 12,
-    speed: 3.5,
-    color: '#00ffaa'
+    x: 1200,
+    y: 800,
+    radius: 14,
+    speed: 4.2,
+    color: '#00ffcc'
   };
 
-  // 研究室のオブジェクト定義
-  const objects = [
-    { id: 'door', name: '脱出扉', x: 370, y: 30, w: 60, h: 20, color: '#ff3333', interactDist: 40 },
-    { id: 'desk', name: '実験デスク', x: 100, y: 120, w: 120, h: 60, color: '#445566', interactDist: 50 },
-    { id: 'safe', name: '頑丈な金庫', x: 650, y: 120, w: 50, h: 50, color: '#aa8833', interactDist: 45 },
-    { id: 'chemicals', name: '怪しい薬品棚', x: 100, y: 400, w: 80, h: 80, color: '#9933cc', interactDist: 50 }
+  // --- 広大な研究所の部屋・壁構造（ブロック障害物） ---
+  const walls = [
+    // 外壁
+    { x: 0, y: 0, w: MAP_WIDTH, h: 40 },
+    { x: 0, y: MAP_HEIGHT - 40, w: MAP_WIDTH, h: 40 },
+    { x: 0, y: 0, w: 40, h: MAP_HEIGHT },
+    { x: MAP_WIDTH - 40, y: 0, w: 40, h: MAP_HEIGHT },
+
+    // 内部パーティション（エリアを4つに区切る構造）
+    // 中央縦壁（通路空け）
+    { x: 1180, y: 40, w: 40, h: 600 },
+    { x: 1180, y: 1000, w: 40, h: 560 },
+    // 中央横壁
+    { x: 40, y: 780, w: 1000, h: 40 },
+    { x: 1360, y: 780, w: 1000, h: 40 }
   ];
 
-  // オーディオ効果
+  // --- インタラクト可能オブジェクト＆ストーリー要素 ---
+  const objects = [
+    // 【エリア1：中央培養室（スタート位置）】
+    {
+      id: 'pod', name: '破裂した培養ポッド', x: 1200, y: 720, w: 80, h: 60, color: '#1a3d54',
+      dist: 60,
+      action: () => setMessage("【培養ポッド】「被験体7号」。ガラスが内側から吹き飛んでいる。自分がここから出たようだ…")
+    },
+    {
+      id: 'term_main', name: 'メイン制御端末', x: 1050, y: 650, w: 60, h: 40, color: '#00aa88',
+      dist: 50,
+      action: () => openTerminal("中央端末システムログ", 
+        "【警告】クロノス粒子濃度の異常上昇を感知。<br>" +
+        "【システムメッセージ】タイムループシーケンスが作動中。残り維持可能時間: 60秒。<br>" +
+        "時間超過時、脳血管爆発による致死的ショックが発生します。<br><br>" +
+        "<i>「彼らは私を閉じ込めたつもりだ。だが、コード『8319』はすでに北東のアーカイブに隠した。」 - 主任研究員アイザック</i>")
+    },
+
+    // 【エリア2：北西・研究記録保管庫】
+    {
+      id: 'desk_corpse', name: '横たわる研究員の遺体', x: 300, y: 300, w: 50, h: 50, color: '#5a3d28',
+      dist: 50,
+      action: () => {
+        memory.hasKeycard = true;
+        setMessage("【遺体】胸ポケットから『セキュリティキーカード』を手に入れた。（アクセス権限が開放）");
+      }
+    },
+    {
+      id: 'term_archive', name: 'アーカイブ端末', x: 500, y: 200, w: 60, h: 40, color: '#0088cc',
+      dist: 50,
+      action: () => openTerminal("研究手記：プロジェクト・クロノス",
+        "2026/09/14<br>" +
+        "我々は時間の定数を書き換えることに成功した。だが被験体7号の細胞崩壊を止める術がない。<br>" +
+        "ループが繰り返されるたび、記憶は保持されるが肉体は限界を迎える。<br>" +
+        "彼が脱出するには、東の第4隔壁に『8319』を入力するしかない。")
+    },
+
+    // 【エリア3：南西・薬品・生体実験室】
+    {
+      id: 'chem_rack', name: '危険薬品保管庫', x: 300, y: 1200, w: 90, h: 60, color: '#7733aa',
+      dist: 60,
+      action: () => triggerDeath("劇物濃縮クロノス試薬の破裂による細胞即死")
+    },
+    {
+      id: 'blood_note', name: '血塗られた手記', x: 600, y: 1350, w: 40, h: 40, color: '#882222',
+      dist: 50,
+      action: () => openTerminal("血文字のメモ",
+        "「ループは60秒で終わるんじゃない…60秒ごとに脳が圧迫されて破裂しているんだ…<br>" +
+        "脱出扉は東エリアの最奥にある。金庫の鍵は北西の研究員が持っていたはずだ…」")
+    },
+
+    // 【エリア4：東エリア・隔壁＆脱出ゲート】
+    {
+      id: 'sub_gate', name: 'セキュリティゲート', x: 1360, y: 900, w: 40, h: 100, color: '#aa8800',
+      dist: 60,
+      action: () => {
+        if (memory.hasKeycard) {
+          memory.unlockedDoors.add('sub_gate');
+          setMessage("【セキュリティゲート】キーカードを認証。ゲートが開放された！");
+        } else {
+          setMessage("【セキュリティゲート】アクセス拒否。セキュリティキーカードが必要です。（北西エリアを探索せよ）");
+        }
+      }
+    },
+    {
+      id: 'exit_door', name: '第4脱出隔壁（EXIT）', x: 2280, y: 780, w: 80, h: 40, color: '#ff2222',
+      dist: 60,
+      action: () => {
+        if (player.x > 1360 && !memory.unlockedDoors.has('sub_gate')) {
+          setMessage("【ロック】セキュリティゲートが閉じられているためアプローチできない。");
+          return;
+        }
+        showKeypad();
+      }
+    }
+  ];
+
+  // 音響効果（Web Audio API）
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  function playBeep(freq, duration) {
+  function playSound(freq, duration, type = 'sine') {
     try {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
+      osc.type = type;
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -310,24 +460,25 @@
   }
 
   function setMessage(msg) {
-    document.getElementById('message-box').innerText = msg;
+    document.getElementById('message-box').innerHTML = msg;
   }
 
   function startGame() {
     timeLeft = TOTAL_TIME;
     isDead = false;
     isWon = false;
-    player.x = 400;
-    player.y = 400;
+    player.x = 1200;
+    player.y = 800;
     fallProgress = 0;
     bloodBlobs = [];
-    
+
     bloodCtx.clearRect(0, 0, bloodCanvas.width, bloodCanvas.height);
     document.getElementById('death-overlay').classList.add('hidden');
     document.getElementById('keypad-overlay').classList.add('hidden');
+    document.getElementById('terminal-overlay').classList.add('hidden');
 
-    setMessage(`【ループ #${loopCount}】研究室に閉じ込められた。タイマーが動いている…！`);
-    
+    setMessage(`【LOOP #${loopCount}】培養器が開放された。頭痛が狂おしい…60秒以内に脱出せよ。`);
+
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
   }
@@ -340,22 +491,18 @@
     lastTime = now;
 
     if (!isDead) {
-      // タイマー減算
+      // タイムリミット処理
       timeLeft -= dt;
       if (timeLeft <= 0) {
         timeLeft = 0;
-        triggerDeath("時間切れ：低酸素および頭部血管破裂");
+        triggerDeath("時間経過：クロノス粒子の過剰蓄積に伴う脳血管破裂");
         return;
       }
 
       document.getElementById('timer-display').innerText = timeLeft.toFixed(2);
-      if (timeLeft < 10) {
-        document.getElementById('timer-display').style.color = '#ff0000';
-      } else {
-        document.getElementById('timer-display').style.color = '#ff3333';
-      }
+      document.getElementById('timer-display').style.color = timeLeft < 15 ? '#ff0000' : '#ff3333';
 
-      // 移動処理
+      // プレイヤー移動処理
       let dx = 0, dy = 0;
       if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
       if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
@@ -370,19 +517,26 @@
       let nextX = player.x + dx * player.speed;
       let nextY = player.y + dy * player.speed;
 
-      nextX = Math.max(30, Math.min(canvas.width - 30, nextX));
-      nextY = Math.max(50, Math.min(canvas.height - 30, nextY));
+      // 壁・衝突判定
+      walls.forEach(w => {
+        // 解放されたドアは衝突をスルー
+        if (w === walls[5] && memory.unlockedDoors.has('sub_gate')) return;
 
-      objects.forEach(obj => {
-        if (nextX + player.radius > obj.x && nextX - player.radius < obj.x + obj.w &&
-            nextY + player.radius > obj.y && nextY - player.radius < obj.y + obj.h) {
+        if (nextX + player.radius > w.x && nextX - player.radius < w.x + w.w &&
+            nextY + player.radius > w.y && nextY - player.radius < w.y + w.h) {
           nextX = player.x;
           nextY = player.y;
         }
       });
 
-      player.x = nextX;
-      player.y = nextY;
+      player.x = Math.max(50, Math.min(MAP_WIDTH - 50, nextX));
+      player.y = Math.max(50, Math.min(MAP_HEIGHT - 50, nextY));
+
+      // カメラトラッキング（プレイヤーを中央に捉える）
+      camera.x = player.x - camera.width / 2;
+      camera.y = player.y - camera.height / 2;
+      camera.x = Math.max(0, Math.min(MAP_WIDTH - camera.width, camera.x));
+      camera.y = Math.max(0, Math.min(MAP_HEIGHT - camera.height, camera.y));
     }
 
     render();
@@ -392,25 +546,41 @@
     }
   }
 
-  // 描画処理（トップダウン視点）
+  // レンダリング（カメラ位置補正付き）
   function render() {
-    ctx.fillStyle = '#0a0d12';
+    ctx.fillStyle = '#05070a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 床の格子模様
-    ctx.strokeStyle = '#151d28';
+    ctx.save();
+    // カメラオフセットの適用
+    ctx.translate(-camera.x, -camera.y);
+
+    // 格子床描画
+    ctx.strokeStyle = '#101622';
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    for (let x = 0; x < MAP_WIDTH; x += 60) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_HEIGHT); ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 40) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    for (let y = 0; y < MAP_HEIGHT; y += 60) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_WIDTH, y); ctx.stroke();
     }
 
-    // 壁
-    ctx.strokeStyle = '#3a4659';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(10, 30, canvas.width - 20, canvas.height - 40);
+    // 部屋ラベル
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 32px monospace';
+    ctx.fillText("AREA 01: MAIN LAB", 900, 500);
+    ctx.fillText("AREA 02: ARCHIVES", 300, 500);
+    ctx.fillText("AREA 03: BIOLOGY", 300, 1100);
+    ctx.fillText("AREA 04: EVACUATION", 1600, 900);
+
+    // 壁の描画
+    ctx.fillStyle = '#1c2536';
+    ctx.strokeStyle = '#3a4b60';
+    ctx.lineWidth = 3;
+    walls.forEach(w => {
+      ctx.fillRect(w.x, w.y, w.w, w.h);
+      ctx.strokeRect(w.x, w.y, w.w, w.h);
+    });
 
     // オブジェクト描画
     objects.forEach(obj => {
@@ -420,14 +590,14 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(obj.x, obj.y, obj.w, obj.h);
 
-      ctx.fillStyle = '#aaa';
+      ctx.fillStyle = '#94a3b8';
       ctx.font = '12px Courier New';
-      ctx.fillText(obj.name, obj.x, obj.y - 5);
+      ctx.fillText(obj.name, obj.x, obj.y - 8);
     });
 
     // プレイヤー描画
     if (!isDead) {
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       ctx.shadowColor = player.color;
       ctx.fillStyle = player.color;
       ctx.beginPath();
@@ -435,48 +605,46 @@
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // 頭部
-      ctx.fillStyle = '#fff';
+      // 視線・頭部表現
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(player.x, player.y - 3, 4, 0, Math.PI * 2);
+      ctx.arc(player.x, player.y - 4, 5, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // リアルな「倒れた人体」のトップダウン描画
+      // 倒れた身体（トップダウンリアル描画）
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.rotate(corpseAngle);
 
-      // 段階的な倒れ（イージング）
-      let bodyLength = 24 * fallProgress;
-      let bodyWidth = 10 - (2 * fallProgress);
+      let bodyLength = 28 * fallProgress;
+      let bodyWidth = 12 - (3 * fallProgress);
 
-      // 脚・下半身
-      ctx.fillStyle = '#0a3d2e';
+      // 脚
+      ctx.fillStyle = '#0f2922';
       ctx.beginPath();
-      ctx.ellipse(0, bodyLength * 0.2, bodyWidth * 0.8, bodyLength * 0.3, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, bodyLength * 0.2, bodyWidth * 0.8, bodyLength * 0.35, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // 胴体
-      ctx.fillStyle = '#00553d';
+      ctx.fillStyle = '#004d40';
       ctx.beginPath();
-      ctx.ellipse(0, bodyLength * 0.6, bodyWidth, bodyLength * 0.4, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, bodyLength * 0.65, bodyWidth, bodyLength * 0.45, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 投げ出された両腕
-      ctx.fillStyle = '#004430';
+      // 脱力した腕
+      ctx.fillStyle = '#00332a';
       ctx.beginPath();
-      ctx.ellipse(-bodyWidth * 1.1, bodyLength * 0.5, 3, 8, -0.4, 0, Math.PI * 2);
-      ctx.ellipse(bodyWidth * 1.1, bodyLength * 0.6, 3, 8, 0.5, 0, Math.PI * 2);
+      ctx.ellipse(-bodyWidth * 1.2, bodyLength * 0.5, 4, 10, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(bodyWidth * 1.2, bodyLength * 0.6, 4, 10, 0.6, 0, Math.PI * 2);
       ctx.fill();
 
-      // 頭部（床についた状態）
-      let currentHeadY = bodyLength + 5;
-      ctx.fillStyle = '#d0d0d0';
+      // 床に着地した頭部
+      let currentHeadY = bodyLength + 6;
+      ctx.fillStyle = '#cbd5e1';
       ctx.beginPath();
-      ctx.arc(0, currentHeadY, 6, 0, Math.PI * 2);
+      ctx.arc(0, currentHeadY, 7, 0, Math.PI * 2);
       ctx.fill();
 
-      // 頭部の位置をグローバル座標として保持（血液の発生源）
       let rad = corpseAngle;
       headPos = {
         x: player.x + (-currentHeadY * Math.sin(rad)),
@@ -485,8 +653,11 @@
 
       ctx.restore();
     }
+
+    ctx.restore();
   }
 
+  // アクション処理
   function interact() {
     if (isDead || isWon) return;
 
@@ -496,32 +667,31 @@
       const centerY = obj.y + obj.h / 2;
       const dist = Math.hypot(player.x - centerX, player.y - centerY);
 
-      if (dist < obj.interactDist) {
+      if (dist < obj.dist) {
         interacted = true;
-        playBeep(440, 0.05);
-
-        if (obj.id === 'door') {
-          setMessage("【脱出扉】4桁の電子キーパッドがある。");
-          showKeypad();
-        } else if (obj.id === 'desk') {
-          setMessage("【実験デスク】書類の中に血文字のメモ『コードは壁の金庫の中に…』");
-        } else if (obj.id === 'safe') {
-          memory.knowsCode = true;
-          setMessage("【金庫】ロックを解除して紙片を見つけた！『脱出コード: 7402』（記憶に保存された）");
-        } else if (obj.id === 'chemicals') {
-          triggerDeath("強酸性試薬を被曝。頭部および呼吸器系が損傷");
-        }
+        playSound(520, 0.05);
+        obj.action();
       }
     });
 
     if (!interacted) {
-      setMessage("ここには特に調べるものはない。");
+      setMessage("周囲に調査可能なオブジェクトはない。");
     }
+  }
+
+  function openTerminal(title, content) {
+    document.getElementById('term-title').innerText = title;
+    document.getElementById('term-content').innerHTML = content;
+    document.getElementById('terminal-overlay').classList.remove('hidden');
+  }
+
+  function closeTerminal() {
+    document.getElementById('terminal-overlay').classList.add('hidden');
   }
 
   function showKeypad() {
     inputCode = "";
-    document.getElementById('keypad-display').innerText = memory.knowsCode ? memory.code : "----";
+    document.getElementById('keypad-display').innerText = "----";
     document.getElementById('keypad-overlay').classList.remove('hidden');
   }
 
@@ -533,7 +703,7 @@
     if (inputCode.length < 4) {
       inputCode += num;
       document.getElementById('keypad-display').innerText = inputCode.padEnd(4, '-');
-      playBeep(600, 0.05);
+      playSound(700, 0.04);
     }
   }
 
@@ -543,40 +713,41 @@
   }
 
   function submitKey() {
-    if (inputCode === memory.code) {
+    if (inputCode === "8319") {
       closeKeypad();
       isWon = true;
-      setMessage("【ロック解除】重い扉が開いた！あなたは60秒のループから脱出した！");
+      setMessage("【開放成功】第4隔壁が開放された！あなたは無限のループを断ち切り、外の世界へ脱出した！");
       document.getElementById('timer-display').style.color = '#00ffcc';
+      playSound(880, 0.3);
     } else {
-      playBeep(150, 0.2);
-      setMessage("エラー：暗号コードが違います。");
+      playSound(180, 0.25, 'sawtooth');
+      setMessage("【エラー】暗号コードが一致しません。");
       clearKey();
     }
   }
 
-  // リアルな死亡＆頭部からの流血処理
+  // リアルな死滅＆頭部からの濃濁血液染み出し
   function triggerDeath(reason) {
     if (isDead) return;
     isDead = true;
 
-    setMessage(`【死亡】${reason}`);
+    document.getElementById('death-reason').innerText = reason;
+    setMessage(`【絶命】${reason}`);
 
-    // 倒れる方向（ランダム）
     corpseAngle = Math.random() * Math.PI * 2;
 
-    // 不規則なリアルな血溜まり形状（複数の円・水滴の集合体）を生成
+    // 不規則なリアルな液体拡散シミュレーション
     bloodBlobs = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 22; i++) {
       let angle = Math.random() * Math.PI * 2;
-      let dist = Math.random() * 22;
+      let dist = Math.random() * 26;
       bloodBlobs.push({
         offsetX: Math.cos(angle) * dist,
         offsetY: Math.sin(angle) * dist,
-        maxRadius: Math.random() * 12 + 6,
+        maxRadius: Math.random() * 14 + 6,
         currentRadius: 0,
-        growthSpeed: Math.random() * 0.15 + 0.05,
-        color: Math.random() > 0.3 ? '#4a0000' : '#2b0000' // 酸化したリアルな濃い血の色
+        growthSpeed: Math.random() * 0.18 + 0.04,
+        color: Math.random() > 0.35 ? '#3d0000' : '#220000'
       });
     }
 
@@ -584,32 +755,30 @@
     function animateDeath() {
       frame++;
 
-      // 1. 膝から崩れ落ちて横たわる（スローモーション）
       if (fallProgress < 1.0) {
-        fallProgress += 0.04;
+        fallProgress += 0.035;
       }
 
       render();
 
-      // 2. 頭部が床についた後、頭頂部/側面から血が染み出し、床の目地に沿って広がる
-      if (frame > 12) {
+      // カメラ位置補正付きで血痕を描画
+      if (frame > 10) {
         bloodCtx.save();
+        bloodCtx.translate(-camera.x, -camera.y);
 
-        // 濃くドロっとした主血溜まり（グラデーション）
         let baseGrad = bloodCtx.createRadialGradient(
           headPos.x, headPos.y, 2,
-          headPos.x, headPos.y, Math.min((frame - 12) * 0.6, 28)
+          headPos.x, headPos.y, Math.min((frame - 10) * 0.7, 32)
         );
-        baseGrad.addColorStop(0, '#5a0000');
-        baseGrad.addColorStop(0.6, '#380000');
-        baseGrad.addColorStop(1, 'rgba(30, 0, 0, 0.8)');
+        baseGrad.addColorStop(0, '#580000');
+        baseGrad.addColorStop(0.6, '#300000');
+        baseGrad.addColorStop(1, 'rgba(20, 0, 0, 0.85)');
 
         bloodCtx.fillStyle = baseGrad;
         bloodCtx.beginPath();
-        bloodCtx.arc(headPos.x, headPos.y, Math.min((frame - 12) * 0.6, 28), 0, Math.PI * 2);
+        bloodCtx.arc(headPos.x, headPos.y, Math.min((frame - 10) * 0.7, 32), 0, Math.PI * 2);
         bloodCtx.fill();
 
-        // 不規則に周囲へ拡がる血の塊・滲み（流体表現）
         bloodBlobs.forEach(b => {
           if (b.currentRadius < b.maxRadius) {
             b.currentRadius += b.growthSpeed;
@@ -625,18 +794,10 @@
           bloodCtx.fill();
         });
 
-        // 静脈血の光沢（粘度感）
-        if (frame > 30) {
-          bloodCtx.fillStyle = 'rgba(120, 10, 10, 0.4)';
-          bloodCtx.beginPath();
-          bloodCtx.arc(headPos.x - 2, headPos.y - 2, 4, 0, Math.PI * 2);
-          bloodCtx.fill();
-        }
-
         bloodCtx.restore();
       }
 
-      if (frame < 100) {
+      if (frame < 110) {
         requestAnimationFrame(animateDeath);
       } else {
         document.getElementById('death-overlay').classList.remove('hidden');
